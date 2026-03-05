@@ -9,6 +9,8 @@ import OrderUtil "mo:core/Order";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+
+
 actor {
   // Mixin authorization
   let accessControlState = AccessControl.initState();
@@ -249,8 +251,9 @@ actor {
     phone : Text,
     items : [OrderItem],
   ) : async Nat {
-    // NO AUTHORIZATION CHECK - Public endpoint for Cash on Delivery store
-    // Anyone including anonymous users can place orders
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can place orders");
+    };
     let totalAmount = items.foldLeft(0, func(acc, item) { acc + (item.price * item.quantity) });
     let orderId = nextOrderId;
     let order : Order = {
@@ -311,23 +314,10 @@ actor {
     if (adminClaimed) {
       Runtime.trap("An admin already exists");
     };
-    if (caller.isAnonymous()) {
-      Runtime.trap("Must be logged in to claim admin");
-    };
-    // Directly register caller as admin in the access control state
-    // (cannot use assignRole as it requires caller to already be admin)
-    accessControlState.userRoles.add(caller, #admin);
-    accessControlState.adminAssigned := true;
     adminClaimed := true;
   };
 
-  public shared (_msg) func resetAdmin() : async () {
-    // Clear all existing roles so a fresh admin can be claimed
-    let keys = accessControlState.userRoles.keys().toArray();
-    for (key in keys.vals()) {
-      accessControlState.userRoles.remove(key);
-    };
-    accessControlState.adminAssigned := false;
+  public shared ({ caller }) func resetAdmin() : async () {
     adminClaimed := false;
   };
 };

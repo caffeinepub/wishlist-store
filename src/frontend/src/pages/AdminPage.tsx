@@ -561,7 +561,12 @@ const STATUS_FILTERS = ["All", "Pending", "Processing", "Shipped", "Delivered"];
 
 function Dashboard() {
   const { identity, clear } = useInternetIdentity();
-  const { data: orders = [], isLoading: ordersLoading } = useGetAllOrders();
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    isError: ordersError,
+    refetch: refetchOrders,
+  } = useGetAllOrders();
 
   const handleSignOut = () => {
     const key = `forcedAdmin_${identity?.getPrincipal().toString()}`;
@@ -735,6 +740,35 @@ function Dashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : ordersError ? (
+          <div
+            data-ocid="admin.orders.error_state"
+            className="py-20 text-center space-y-4 border border-dashed border-border"
+          >
+            <Package
+              size={32}
+              strokeWidth={1}
+              className="mx-auto text-muted-foreground"
+            />
+            <div className="space-y-1">
+              <p className="font-body text-sm text-foreground font-medium">
+                Unable to load orders
+              </p>
+              <p className="font-body text-xs text-muted-foreground">
+                There was a problem fetching your orders. This may happen if
+                your admin session expired.
+              </p>
+            </div>
+            <Button
+              data-ocid="admin.orders.retry_button"
+              variant="outline"
+              size="sm"
+              onClick={() => refetchOrders()}
+              className="font-body text-xs tracking-widest uppercase rounded-none"
+            >
+              Retry
+            </Button>
           </div>
         ) : filtered.length === 0 ? (
           <div

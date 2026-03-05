@@ -69,21 +69,31 @@ export function usePlaceOrder() {
       return actor.placeOrder(customerName, email, address, phone, items);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"], exact: false });
     },
   });
 }
 
 export function useGetAllOrders() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  const principalKey = identity?.getPrincipal().toString() ?? "anonymous";
   return useQuery<Order[]>({
-    queryKey: ["orders"],
+    queryKey: ["orders", principalKey],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllOrders();
+      try {
+        const result = await actor.getAllOrders();
+        return result;
+      } catch (err) {
+        console.error("getAllOrders error:", err);
+        throw err; // re-throw so React Query shows error state
+      }
     },
     enabled: !!actor && !isFetching,
     staleTime: 0,
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
@@ -102,7 +112,7 @@ export function useUpdateOrderStatus() {
       return actor.updateOrderStatus(orderId, status);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"], exact: false });
     },
   });
 }
@@ -134,6 +144,8 @@ export function useClaimFirstAdmin() {
     onSuccess: () => {
       // Invalidate all isAdmin queries regardless of principal key
       queryClient.invalidateQueries({ queryKey: ["isAdmin"], exact: false });
+      // Also invalidate orders so they refetch immediately on dashboard load
+      queryClient.invalidateQueries({ queryKey: ["orders"], exact: false });
     },
   });
 }
@@ -149,6 +161,8 @@ export function useResetAdmin() {
     onSuccess: () => {
       // Invalidate all isAdmin queries regardless of principal key
       queryClient.invalidateQueries({ queryKey: ["isAdmin"], exact: false });
+      // Also invalidate orders so they refetch immediately on dashboard load
+      queryClient.invalidateQueries({ queryKey: ["orders"], exact: false });
     },
   });
 }
