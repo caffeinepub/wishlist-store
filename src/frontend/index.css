@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Fonts ─────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("/assets/fonts/CabinetGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces-Italic-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ─── Design Tokens ─────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --radius: 0.25rem;
+
+    /* Wishlist brand palette — warm minimal */
+    --background: 0.99 0.003 75;         /* near-white warm */
+    --foreground: 0.18 0.006 60;         /* near-black warm */
+
+    --card: 0.97 0.006 75;               /* warm off-white */
+    --card-foreground: 0.18 0.006 60;
+
+    --popover: 0.99 0.003 75;
+    --popover-foreground: 0.18 0.006 60;
+
+    --primary: 0.18 0.006 60;            /* charcoal/black */
+    --primary-foreground: 0.99 0.003 75;
+
+    --secondary: 0.93 0.009 75;          /* warm beige */
+    --secondary-foreground: 0.18 0.006 60;
+
+    --muted: 0.95 0.007 75;              /* light gray-warm */
+    --muted-foreground: 0.52 0.008 60;
+
+    --accent: 0.90 0.012 75;             /* accent beige */
+    --accent-foreground: 0.18 0.006 60;
+
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    --border: 0.88 0.008 75;
+    --input: 0.88 0.008 75;
+    --ring: 0.18 0.006 60;
+
+    --chart-1: 0.646 0.222 41.116;
+    --chart-2: 0.6 0.118 184.704;
+    --chart-3: 0.398 0.07 227.392;
+    --chart-4: 0.828 0.189 84.429;
+    --chart-5: 0.769 0.188 70.08;
+
+    --sidebar: 0.96 0.006 75;
+    --sidebar-foreground: 0.18 0.006 60;
+    --sidebar-primary: 0.18 0.006 60;
+    --sidebar-primary-foreground: 0.99 0.003 75;
+    --sidebar-accent: 0.93 0.009 75;
+    --sidebar-accent-foreground: 0.18 0.006 60;
+    --sidebar-border: 0.88 0.008 75;
+    --sidebar-ring: 0.18 0.006 60;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Cabinet Grotesk", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ─── Global Utilities ──────────────────────────────────────────────── */
+@layer utilities {
+  .font-display {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+  }
+
+  .font-body {
+    font-family: "Cabinet Grotesk", sans-serif;
+    font-style: normal;
+  }
+
+  .product-image-ratio {
+    aspect-ratio: 3 / 4;
+  }
+
+  /* Smooth underline animation for links */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: currentColor;
+    transition: width 0.3s ease;
+  }
+  .link-underline:hover::after {
+    width: 100%;
+  }
+}
