@@ -1,18 +1,16 @@
 import Time "mo:core/Time";
 import Map "mo:core/Map";
-import Text "mo:core/Text";
 import Nat "mo:core/Nat";
-import Int "mo:core/Int";
 import Iter "mo:core/Iter";
 import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
+import OrderUtil "mo:core/Order";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import OrderUtil "mo:core/Order";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   // Mixin authorization
   let accessControlState = AccessControl.initState();
@@ -26,7 +24,7 @@ actor {
     id : Nat;
     name : Text;
     category : Text;
-    price : Nat; // price in cents
+    price : Nat;
     sizes : [Text];
     imageUrl : Text;
     description : Text;
@@ -53,7 +51,6 @@ actor {
     placedBy : Principal;
   };
 
-  // Comparators for sorting
   module Product {
     public func compare(product1 : Product, product2 : Product) : OrderUtil.Order {
       Nat.compare(product1.id, product2.id);
@@ -71,79 +68,87 @@ actor {
   let orders = Map.empty<Nat, Order>();
   var nextProductId = 8;
   var nextOrderId = 1;
+  var adminClaimed = false;
 
-  // Store 7 seed products at deployment time
+  // Hardcoded 7 seed products (do not touch these)
   let seedProducts : [Product] = [
     {
       id = 1;
+      name = "Wrap Tie Midi Skirt";
+      category = "Skirts";
+      price = 349900;
+      sizes = ["Small", "Medium", "Large"];
+      imageUrl = "/assets/uploads/37d8a4c6025d30a6af840bbcc01c255a-1.jpg";
+      description = "Dark charcoal wrap skirt with contrast tie detailing and pleated lower panel. Architectural and refined.";
+    },
+    {
+      id = 2;
       name = "Draped Wide-Leg Trousers";
       category = "Pants";
       price = 349900;
       sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/0b4a647c5c0d72c3c555e4c453eaecf1-1.jpg";
+      imageUrl = "/assets/uploads/0b4a647c5c0d72c3c555e4c453eaecf1-1-2.jpg";
       description = "Architectural wide-leg silhouette with a dramatic draped front panel. Elevated wardrobe staple.";
     },
     {
-      id = 2;
-      name = "Ribbed Button-Up Shirt";
-      category = "Shirts";
-      price = 199900;
-      sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/77e7db1cfaa122f30cdd3542264cd8af-2.jpg";
-      description = "Fitted burgundy shirt with vertical ribbing and a classic collar. Effortlessly versatile.";
-    },
-    {
       id = 3;
-      name = "Utility Bomber Jacket";
-      category = "Jackets";
-      price = 349900;
-      sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/14a7c72f2bc24e76a21bc92215ddb3ca-3.jpg";
-      description = "Washed grey bomber with asymmetric toggle closure. Urban utility meets editorial edge.";
-    },
-    {
-      id = 4;
-      name = "Cat Embroidery Shirt";
-      category = "Shirts";
-      price = 199900;
-      sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/e69659b53c59b7ce39b555473713f573-4.jpg";
-      description = "Oversized plaid shirt with playful cat embroidery and a detachable tie. Casual charm.";
-    },
-    {
-      id = 5;
       name = "Plaid-Layered Baggy Jeans";
       category = "Pants";
       price = 349900;
       sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/c06bd491e629cc58123c67f059c56864-5.jpg";
+      imageUrl = "/assets/uploads/728ed3a7056f6d549e4713cb5a9fdc99-3.jpg";
       description = "Oversized denim with a deconstructed plaid overlay. Bold, editorial statement piece.";
     },
     {
+      id = 4;
+      name = "Plaid-Draped Balloon Pants";
+      category = "Pants";
+      price = 349900;
+      sizes = ["Small", "Medium", "Large"];
+      imageUrl = "/assets/uploads/c06bd491e629cc58123c67f059c56864-1-4.jpg";
+      description = "Black balloon-leg denim with an oversized draped plaid layer. Dramatic silhouette, maximum impact.";
+    },
+    {
+      id = 5;
+      name = "Chinese Knot Button Shirt";
+      category = "Shirts";
+      price = 199900;
+      sizes = ["Small", "Medium", "Large"];
+      imageUrl = "/assets/uploads/cf3429abf00a319ded6cafd12786af20-5.jpg";
+      description = "Natural linen shirt with traditional Chinese frog knot closures. Minimalist heritage meets modern ease.";
+    },
+    {
       id = 6;
+      name = "Cat Embroidery Plaid Shirt";
+      category = "Shirts";
+      price = 199900;
+      sizes = ["Small", "Medium", "Large"];
+      imageUrl = "/assets/uploads/e69659b53c59b7ce39b555473713f573-1-6.jpg";
+      description = "Oversized plaid shirt with playful cat embroidery and a detachable tie. Casual charm.";
+    },
+    {
+      id = 7;
       name = "Cat Print Denim Skirt";
       category = "Skirts";
       price = 349900;
       sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/17c0fa49f6b4bb9827425433e5b4caf0-6.jpg";
-      description = "Asymmetric wrap denim skirt with oversized cat graphic. A statement piece.";
-    },
-    {
-      id = 7;
-      name = "Barrel-Leg Utility Trousers";
-      category = "Pants";
-      price = 349900;
-      sizes = ["Small", "Medium", "Large"];
-      imageUrl = "/assets/uploads/952129590a0cb934971fb405b1ce688d-7.jpg";
-      description = "Olive barrel-leg trousers with curved seam detailing. Relaxed and refined.";
+      imageUrl = "/assets/uploads/17c0fa49f6b4bb9827425433e5b4caf0-1-7.jpg";
+      description = "Asymmetric wrap denim skirt with oversized cat graphic print. A statement piece for any wardrobe.";
     },
   ];
 
-  for (p in seedProducts.values()) {
-    products.add(p.id, p);
+  // Only used for migrations, not during actor initialization
+  public query ({ caller }) func getSeedProducts() : async [Product] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized");
+    };
+    seedProducts;
   };
 
+  // **********
   // User Profile Management
+  // **********
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -165,7 +170,21 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // Product management
+  // **********
+  // Product Management
+  // **********
+
+  public query func getAllProducts() : async [Product] {
+    products.values().toArray().sort();
+  };
+
+  public query func getProduct(productId : Nat) : async Product {
+    switch (products.get(productId)) {
+      case (null) { Runtime.trap("Product does not exist") };
+      case (?product) { product };
+    };
+  };
+
   public shared ({ caller }) func addProduct(
     name : Text,
     category : Text,
@@ -221,18 +240,10 @@ actor {
     };
   };
 
-  public query func getAllProducts() : async [Product] {
-    products.values().toArray().sort();
-  };
+  // **********
+  // Order Management
+  // **********
 
-  public query func getProduct(productId : Nat) : async Product {
-    switch (products.get(productId)) {
-      case (null) { Runtime.trap("Product does not exist") };
-      case (?product) { product };
-    };
-  };
-
-  // Order management
   public shared ({ caller }) func placeOrder(
     customerName : Text,
     email : Text,
@@ -293,5 +304,20 @@ actor {
         orders.add(orderId, updatedOrder);
       };
     };
+  };
+
+  // **********
+  // First Admin Bootstrapping
+  // **********
+
+  public shared ({ caller }) func claimFirstAdmin() : async () {
+    if (adminClaimed) {
+      Runtime.trap("An admin already exists");
+    };
+    adminClaimed := true;
+  };
+
+  public shared ({ caller }) func resetAdmin() : async () {
+    adminClaimed := false;
   };
 };

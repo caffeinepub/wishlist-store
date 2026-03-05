@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
@@ -19,10 +18,10 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const productId = BigInt(id);
 
-  const { data: backendProduct, isLoading } = useGetProduct(productId);
-  // Fall back to static product data if backend hasn't loaded yet
-  const staticProduct = STATIC_PRODUCTS.find((p) => p.id === productId);
-  const product = backendProduct ?? (isLoading ? undefined : staticProduct);
+  useGetProduct(productId); // warm the cache but don't use backend imageUrls
+  // Always use STATIC_PRODUCTS — they have bundled image paths guaranteed to
+  // survive the build. Backend product imageUrls are legacy paths that get stripped.
+  const product = STATIC_PRODUCTS.find((p) => p.id === productId);
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [sizeError, setSizeError] = useState(false);
@@ -47,29 +46,6 @@ export default function ProductDetailPage() {
     addItem(product, selectedSize);
     navigate({ to: "/checkout" });
   };
-
-  if (isLoading && !product) {
-    return (
-      <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <Skeleton className="product-image-ratio w-full" />
-          <div className="flex flex-col gap-4 pt-4">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-6 w-20 mt-2" />
-            <Skeleton className="h-20 w-full mt-4" />
-            <div className="flex gap-3 mt-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-10 w-20" />
-              ))}
-            </div>
-            <Skeleton className="h-12 w-full mt-6" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   if (!product) {
     return (

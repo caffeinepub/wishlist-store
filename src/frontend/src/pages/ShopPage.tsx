@@ -1,19 +1,15 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "motion/react";
 import ProductCard from "../components/ProductCard";
 import { useGetAllProducts } from "../hooks/useQueries";
 import { STATIC_PRODUCTS } from "../utils/staticProducts";
 
 export default function ShopPage() {
-  const { data: backendProducts, isLoading } = useGetAllProducts();
+  useGetAllProducts(); // warm the cache but don't use backend imageUrls
 
-  // Use backend products if available, otherwise fall back to static products
-  const products =
-    backendProducts && backendProducts.length > 0
-      ? backendProducts
-      : isLoading
-        ? null
-        : STATIC_PRODUCTS;
+  // Always use STATIC_PRODUCTS — they have bundled image paths guaranteed to
+  // survive the build. Backend product imageUrls are legacy paths that get
+  // stripped, so we never render backend products directly.
+  const products = STATIC_PRODUCTS;
 
   return (
     <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
@@ -32,39 +28,19 @@ export default function ShopPage() {
         </h1>
       </motion.div>
 
-      {/* Loading state */}
-      {isLoading && !products && (
-        <div
-          data-ocid="shop.loading_state"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14"
-        >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="flex flex-col gap-3">
-              <Skeleton className="product-image-ratio w-full" />
-              <Skeleton className="h-3.5 w-16" />
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-10 w-full mt-1" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Products grid */}
-      {products && products.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
-          {products.map((product, i) => (
-            <motion.div
-              key={product.id.toString()}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.5 }}
-            >
-              <ProductCard product={product} index={i + 1} />
-            </motion.div>
-          ))}
-        </div>
-      )}
+      {/* Products grid — always visible immediately */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
+        {products.map((product, i) => (
+          <motion.div
+            key={product.id.toString()}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.5 }}
+          >
+            <ProductCard product={product} index={i + 1} />
+          </motion.div>
+        ))}
+      </div>
     </main>
   );
 }

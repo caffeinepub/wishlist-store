@@ -46,15 +46,18 @@ export enum UserRole {
 export interface backendInterface {
     addProduct(name: string, category: string, price: bigint, sizes: Array<string>, imageUrl: string, description: string): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    claimFirstAdmin(): Promise<void>;
     getAllOrders(): Promise<Array<Order>>;
     getAllProducts(): Promise<Array<Product>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getOrder(orderId: bigint): Promise<Order>;
     getProduct(productId: bigint): Promise<Product>;
+    getSeedProducts(): Promise<Array<Product>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     placeOrder(customerName: string, email: string, address: string, phone: string, items: Array<OrderItem>): Promise<bigint>;
+    resetAdmin(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateOrderStatus(orderId: bigint, status: string): Promise<void>;
     updateProduct(productId: bigint, name: string, category: string, price: bigint, sizes: Array<string>, imageUrl: string, description: string): Promise<void>;

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Order, OrderItem, Product } from "../backend.d";
 import { useActor } from "./useActor";
+import { useInternetIdentity } from "./useInternetIdentity";
 
 export function useGetAllProducts() {
   const { actor, isFetching } = useActor();
@@ -108,13 +109,46 @@ export function useUpdateOrderStatus() {
 
 export function useIsAdmin() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  // Include identity principal in query key so this refetches on login/logout
+  const principalKey = identity?.getPrincipal().toString() ?? "anonymous";
   return useQuery<boolean>({
-    queryKey: ["isAdmin"],
+    queryKey: ["isAdmin", principalKey],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isCallerAdmin();
     },
     enabled: !!actor && !isFetching,
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 0, // always recheck on each identity change
+  });
+}
+
+export function useClaimFirstAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.claimFirstAdmin();
+    },
+    onSuccess: () => {
+      // Invalidate all isAdmin queries regardless of principal key
+      queryClient.invalidateQueries({ queryKey: ["isAdmin"], exact: false });
+    },
+  });
+}
+
+export function useResetAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.resetAdmin();
+    },
+    onSuccess: () => {
+      // Invalidate all isAdmin queries regardless of principal key
+      queryClient.invalidateQueries({ queryKey: ["isAdmin"], exact: false });
+    },
   });
 }

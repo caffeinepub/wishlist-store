@@ -19,13 +19,15 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Order } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  useClaimFirstAdmin,
   useGetAllOrders,
   useIsAdmin,
+  useResetAdmin,
   useUpdateOrderStatus,
 } from "../hooks/useQueries";
 
@@ -338,38 +340,174 @@ function LoginGate() {
   );
 }
 
-// ── Access Denied ────────────────────────────────────────────────────
+// ── First Admin Setup ────────────────────────────────────────────────
 
-function AccessDenied() {
-  const { clear } = useInternetIdentity();
+function FirstAdminSetup({
+  onClaimSuccess,
+}: {
+  onClaimSuccess: () => void;
+}) {
+  const { identity, clear } = useInternetIdentity();
+  const { mutateAsync: claimAdmin, isPending: isClaiming } =
+    useClaimFirstAdmin();
+  const { mutateAsync: resetAdmin, isPending: isResetting } = useResetAdmin();
+
+  const [view, setView] = useState<"claim" | "reset_confirm">("claim");
+
+  const isWorking = isClaiming || isResetting;
+
+  const handleSignOut = () => {
+    const key = `forcedAdmin_${identity?.getPrincipal().toString()}`;
+    localStorage.removeItem(key);
+    clear();
+  };
+
+  const handleClaim = async () => {
+    try {
+      await claimAdmin();
+      toast.success("Admin access claimed successfully! Opening dashboard…");
+      onClaimSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.toLowerCase().includes("already") ||
+        msg.toLowerCase().includes("exists")
+      ) {
+        toast.error(
+          "Admin access has already been claimed by another account.",
+        );
+      } else {
+        toast.error(msg || "Failed to claim admin access.");
+      }
+    }
+  };
+
+  const handleResetAndClaim = async () => {
+    try {
+      await resetAdmin();
+      await claimAdmin();
+      toast.success("Admin access reset and claimed. Welcome!");
+      onClaimSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Failed to reset admin access.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
-      <div className="max-w-sm w-full text-center space-y-8">
-        <div className="border border-border bg-card p-8 space-y-6">
-          <ShieldAlert
-            size={32}
-            strokeWidth={1}
-            className="mx-auto text-muted-foreground"
-          />
-          <div className="space-y-1.5">
-            <p className="font-body text-sm font-medium text-foreground">
-              Access Denied
-            </p>
-            <p className="font-body text-xs text-muted-foreground leading-relaxed">
-              Your account does not have admin privileges. Please contact the
-              store owner.
-            </p>
-          </div>
-          <Button
-            data-ocid="admin.access_denied.button"
-            variant="outline"
-            onClick={clear}
-            className="w-full font-body text-xs tracking-widest uppercase h-10 rounded-none"
-          >
-            Sign Out
-          </Button>
+      <div
+        data-ocid="admin.first_setup_panel"
+        className="max-w-sm w-full text-center space-y-8"
+      >
+        <div className="space-y-2">
+          <p className="font-display text-3xl font-semibold text-foreground">
+            Wishlist
+          </p>
+          <p className="font-body text-xs tracking-widest uppercase text-muted-foreground">
+            Admin Setup
+          </p>
         </div>
+
+        {view === "claim" ? (
+          <div className="border border-border bg-card p-8 space-y-6">
+            <ShieldAlert
+              size={32}
+              strokeWidth={1}
+              className="mx-auto text-muted-foreground"
+            />
+            <div className="space-y-2">
+              <p className="font-body text-sm font-medium text-foreground">
+                Claim Admin Access
+              </p>
+              <p className="font-body text-xs text-muted-foreground leading-relaxed">
+                If you are the store owner, you can claim admin access. This
+                only works if no admin has been set up yet.
+              </p>
+            </div>
+            <Button
+              data-ocid="admin.claim_admin_button"
+              disabled={isClaiming}
+              onClick={handleClaim}
+              className="w-full font-body text-xs tracking-widest uppercase h-11 bg-foreground text-background hover:opacity-80 rounded-none disabled:opacity-50"
+            >
+              {isClaiming ? (
+                <>
+                  <Loader2 size={13} className="mr-2 animate-spin" />
+                  Claiming…
+                </>
+              ) : (
+                "Claim Admin Access"
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSignOut}
+              className="w-full font-body text-xs tracking-widest uppercase h-10 rounded-none"
+            >
+              Sign Out
+            </Button>
+            <button
+              type="button"
+              onClick={() => setView("reset_confirm")}
+              className="font-body text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+            >
+              Already have access issues? Reset admin
+            </button>
+          </div>
+        ) : (
+          <div className="border border-border bg-card p-8 space-y-6">
+            <ShieldAlert
+              size={32}
+              strokeWidth={1}
+              className="mx-auto text-red-500"
+            />
+            <div className="space-y-2">
+              <p className="font-body text-sm font-medium text-foreground">
+                Reset Admin Access
+              </p>
+              <div className="bg-red-50 border border-red-200 p-4 text-left space-y-1.5">
+                <p className="font-body text-xs font-medium text-red-700">
+                  Warning
+                </p>
+                <p className="font-body text-xs text-red-600 leading-relaxed">
+                  This will remove all existing admin access. You will be able
+                  to claim admin immediately after.
+                </p>
+              </div>
+            </div>
+            <Button
+              data-ocid="admin.reset_confirm_button"
+              disabled={isWorking}
+              onClick={handleResetAndClaim}
+              className="w-full font-body text-xs tracking-widest uppercase h-11 bg-red-600 text-white hover:bg-red-700 rounded-none disabled:opacity-50"
+            >
+              {isWorking ? (
+                <>
+                  <Loader2 size={13} className="mr-2 animate-spin" />
+                  Resetting…
+                </>
+              ) : (
+                "Reset & Reclaim Admin"
+              )}
+            </Button>
+            <Button
+              data-ocid="admin.reset_cancel_button"
+              variant="outline"
+              disabled={isWorking}
+              onClick={() => setView("claim")}
+              className="w-full font-body text-xs tracking-widest uppercase h-10 rounded-none"
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        <p className="font-body text-xs text-muted-foreground">
+          {view === "claim"
+            ? "If an admin already exists, contact the store owner for access."
+            : "Only reset admin if you have been locked out of your account."}
+        </p>
       </div>
     </div>
   );
@@ -422,8 +560,14 @@ const STATUS_FILTERS = ["All", "Pending", "Processing", "Shipped", "Delivered"];
 // ── Main Dashboard ───────────────────────────────────────────────────
 
 function Dashboard() {
-  const { clear } = useInternetIdentity();
+  const { identity, clear } = useInternetIdentity();
   const { data: orders = [], isLoading: ordersLoading } = useGetAllOrders();
+
+  const handleSignOut = () => {
+    const key = `forcedAdmin_${identity?.getPrincipal().toString()}`;
+    localStorage.removeItem(key);
+    clear();
+  };
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -498,7 +642,7 @@ function Dashboard() {
             data-ocid="admin.logout_button"
             variant="ghost"
             size="sm"
-            onClick={clear}
+            onClick={handleSignOut}
             className="font-body text-xs text-muted-foreground hover:text-foreground gap-1.5 rounded-none"
           >
             <LogOut size={13} strokeWidth={1.5} />
@@ -691,6 +835,23 @@ function Dashboard() {
 export default function AdminPage() {
   const { identity, isInitializing } = useInternetIdentity();
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+  const [forcedAdmin, setForcedAdmin] = useState(false);
+
+  // Restore forcedAdmin from localStorage when identity is available
+  useEffect(() => {
+    if (!identity) return;
+    const key = `forcedAdmin_${identity.getPrincipal().toString()}`;
+    if (localStorage.getItem(key) === "true") {
+      setForcedAdmin(true);
+    }
+  }, [identity]);
+
+  const onClaimSuccess = () => {
+    if (!identity) return;
+    const key = `forcedAdmin_${identity.getPrincipal().toString()}`;
+    localStorage.setItem(key, "true");
+    setForcedAdmin(true);
+  };
 
   // Still loading auth state
   if (isInitializing) {
@@ -702,15 +863,16 @@ export default function AdminPage() {
     return <LoginGate />;
   }
 
-  // Logged in but admin check in progress
-  if (adminLoading) {
+  // Logged in but admin check in progress (only block if not already forced)
+  if (adminLoading && !forcedAdmin) {
     return <DashboardSkeleton />;
   }
 
-  // Logged in but not admin
-  if (!isAdmin) {
-    return <AccessDenied />;
+  // Admin confirmed by backend OR forced after successful claim
+  if (isAdmin || forcedAdmin) {
+    return <Dashboard />;
   }
 
-  return <Dashboard />;
+  // Logged in but not admin — show first-time setup
+  return <FirstAdminSetup onClaimSuccess={onClaimSuccess} />;
 }

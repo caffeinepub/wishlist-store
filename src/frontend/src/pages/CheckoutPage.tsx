@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useCart } from "../context/CartContext";
 import { usePlaceOrder } from "../hooks/useQueries";
 import { formatPrice } from "../utils/format";
+import { resolveProductImage } from "../utils/productImages";
 
 interface FormState {
   name: string;
@@ -292,7 +293,7 @@ export default function CheckoutPage() {
                   >
                     <div className="w-14 h-[75px] bg-secondary/50 shrink-0 overflow-hidden">
                       <img
-                        src={item.product.imageUrl}
+                        src={resolveProductImage(item.product.imageUrl)}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                       />

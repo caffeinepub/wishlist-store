@@ -129,15 +129,18 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addProduct(name: string, category: string, price: bigint, sizes: Array<string>, imageUrl: string, description: string): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    claimFirstAdmin(): Promise<void>;
     getAllOrders(): Promise<Array<Order>>;
     getAllProducts(): Promise<Array<Product>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getOrder(orderId: bigint): Promise<Order>;
     getProduct(productId: bigint): Promise<Product>;
+    getSeedProducts(): Promise<Array<Product>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     placeOrder(customerName: string, email: string, address: string, phone: string, items: Array<OrderItem>): Promise<bigint>;
+    resetAdmin(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateOrderStatus(orderId: bigint, status: string): Promise<void>;
     updateProduct(productId: bigint, name: string, category: string, price: bigint, sizes: Array<string>, imageUrl: string, description: string): Promise<void>;
@@ -184,6 +187,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async claimFirstAdmin(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.claimFirstAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.claimFirstAdmin();
             return result;
         }
     }
@@ -271,6 +288,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getSeedProducts(): Promise<Array<Product>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSeedProducts();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSeedProducts();
+            return result;
+        }
+    }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
@@ -310,6 +341,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.placeOrder(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async resetAdmin(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.resetAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.resetAdmin();
             return result;
         }
     }

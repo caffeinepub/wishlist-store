@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import ProductCard from "../components/ProductCard";
 import { useGetAllProducts } from "../hooks/useQueries";
-import { resolveProductImage } from "../utils/productImages";
+import { img2, img3 } from "../utils/productImages";
 import { STATIC_PRODUCTS } from "../utils/staticProducts";
 
 const fadeUp = {
@@ -16,12 +16,10 @@ const fadeUp = {
 };
 
 export default function HomePage() {
-  const { data: backendProducts } = useGetAllProducts();
-  // Use backend products if available, otherwise fall back to static products
-  const products =
-    backendProducts && backendProducts.length > 0
-      ? backendProducts
-      : STATIC_PRODUCTS;
+  useGetAllProducts(); // warm the cache but don't use backend imageUrls
+  // Always use STATIC_PRODUCTS — they have bundled image paths guaranteed to
+  // survive the build. Backend product imageUrls are legacy paths that get stripped.
+  const products = STATIC_PRODUCTS;
 
   return (
     <main>
@@ -204,9 +202,7 @@ export default function HomePage() {
           >
             <div className="product-image-ratio bg-white rounded-sm overflow-hidden">
               <img
-                src={resolveProductImage(
-                  "/assets/uploads/0b4a647c5c0d72c3c555e4c453eaecf1-1.jpg",
-                )}
+                src={img2}
                 alt="Brand story"
                 className="w-full h-full object-contain"
                 loading="lazy"
@@ -214,9 +210,7 @@ export default function HomePage() {
             </div>
             <div className="product-image-ratio bg-white rounded-sm overflow-hidden mt-8">
               <img
-                src={resolveProductImage(
-                  "/assets/uploads/77e7db1cfaa122f30cdd3542264cd8af-2.jpg",
-                )}
+                src={img3}
                 alt="Brand story"
                 className="w-full h-full object-contain"
                 loading="lazy"
