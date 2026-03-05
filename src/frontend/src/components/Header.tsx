@@ -2,6 +2,8 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Menu, ShoppingBag, X } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useIsAdmin } from "../hooks/useQueries";
 
 const navLinks = [
   { to: "/", label: "Home", ocid: "nav.home_link" },
@@ -14,6 +16,9 @@ export default function Header() {
   const { totalItems } = useCart();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { identity } = useInternetIdentity();
+  const { data: isAdmin } = useIsAdmin();
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -43,6 +48,19 @@ export default function Header() {
                 {label}
               </Link>
             ))}
+            {identity && isAdmin && (
+              <Link
+                to="/admin"
+                data-ocid="nav.admin_link"
+                className={`font-body text-sm tracking-wide link-underline transition-colors ${
+                  location.pathname === "/admin"
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* Cart + Mobile menu */}
@@ -93,6 +111,20 @@ export default function Header() {
                 {label}
               </Link>
             ))}
+            {identity && isAdmin && (
+              <Link
+                to="/admin"
+                data-ocid="nav.admin_link"
+                onClick={() => setMenuOpen(false)}
+                className={`font-body text-sm py-2.5 border-b border-border/50 tracking-wide ${
+                  location.pathname === "/admin"
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground"
+                }`}
+              >
+                Admin
+              </Link>
+            )}
             <Link
               to="/cart"
               data-ocid="nav.cart_link"

@@ -2,9 +2,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "motion/react";
 import ProductCard from "../components/ProductCard";
 import { useGetAllProducts } from "../hooks/useQueries";
+import { STATIC_PRODUCTS } from "../utils/staticProducts";
 
 export default function ShopPage() {
-  const { data: products, isLoading, isError } = useGetAllProducts();
+  const { data: backendProducts, isLoading } = useGetAllProducts();
+
+  // Use backend products if available, otherwise fall back to static products
+  const products =
+    backendProducts && backendProducts.length > 0
+      ? backendProducts
+      : isLoading
+        ? null
+        : STATIC_PRODUCTS;
 
   return (
     <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
@@ -23,18 +32,8 @@ export default function ShopPage() {
         </h1>
       </motion.div>
 
-      {/* Error state */}
-      {isError && (
-        <div
-          data-ocid="shop.error_state"
-          className="text-center py-20 text-muted-foreground font-body"
-        >
-          <p>Unable to load products. Please try again.</p>
-        </div>
-      )}
-
       {/* Loading state */}
-      {isLoading && (
+      {isLoading && !products && (
         <div
           data-ocid="shop.loading_state"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14"
@@ -52,30 +51,20 @@ export default function ShopPage() {
       )}
 
       {/* Products grid */}
-      {!isLoading &&
-        !isError &&
-        (products && products.length === 0 ? (
-          <div
-            data-ocid="shop.empty_state"
-            className="text-center py-24 text-muted-foreground font-body"
-          >
-            <p className="text-lg">No products available yet.</p>
-            <p className="text-sm mt-2">Check back soon.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
-            {(products ?? []).map((product, i) => (
-              <motion.div
-                key={product.id.toString()}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.5 }}
-              >
-                <ProductCard product={product} index={i + 1} />
-              </motion.div>
-            ))}
-          </div>
-        ))}
+      {products && products.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
+          {products.map((product, i) => (
+            <motion.div
+              key={product.id.toString()}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06, duration: 0.5 }}
+            >
+              <ProductCard product={product} index={i + 1} />
+            </motion.div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

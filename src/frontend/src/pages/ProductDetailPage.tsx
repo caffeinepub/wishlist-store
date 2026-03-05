@@ -9,15 +9,20 @@ import { toast } from "sonner";
 import { useCart } from "../context/CartContext";
 import { useGetProduct } from "../hooks/useQueries";
 import { formatPrice } from "../utils/format";
+import { resolveProductImage } from "../utils/productImages";
+import { STATIC_PRODUCTS } from "../utils/staticProducts";
 
 const SIZES = ["Small", "Medium", "Large"];
 
 export default function ProductDetailPage() {
-  const { id } = useParams({ from: "/product/$id" });
+  const { id } = useParams({ from: "/storefront/product/$id" });
   const navigate = useNavigate();
   const productId = BigInt(id);
 
-  const { data: product, isLoading, isError } = useGetProduct(productId);
+  const { data: backendProduct, isLoading } = useGetProduct(productId);
+  // Fall back to static product data if backend hasn't loaded yet
+  const staticProduct = STATIC_PRODUCTS.find((p) => p.id === productId);
+  const product = backendProduct ?? (isLoading ? undefined : staticProduct);
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [sizeError, setSizeError] = useState(false);
@@ -43,7 +48,7 @@ export default function ProductDetailPage() {
     navigate({ to: "/checkout" });
   };
 
-  if (isLoading) {
+  if (isLoading && !product) {
     return (
       <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -66,7 +71,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (isError || !product) {
+  if (!product) {
     return (
       <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16 text-center">
         <p className="font-body text-muted-foreground">Product not found.</p>
@@ -100,7 +105,7 @@ export default function ProductDetailPage() {
           className="product-image-ratio w-full overflow-hidden bg-secondary/40"
         >
           <img
-            src={product.imageUrl}
+            src={resolveProductImage(product.imageUrl)}
             alt={product.name}
             className="w-full h-full object-contain"
           />

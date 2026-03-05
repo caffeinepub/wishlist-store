@@ -1,9 +1,10 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import ProductCard from "../components/ProductCard";
 import { useGetAllProducts } from "../hooks/useQueries";
+import { resolveProductImage } from "../utils/productImages";
+import { STATIC_PRODUCTS } from "../utils/staticProducts";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -15,7 +16,12 @@ const fadeUp = {
 };
 
 export default function HomePage() {
-  const { data: products, isLoading } = useGetAllProducts();
+  const { data: backendProducts } = useGetAllProducts();
+  // Use backend products if available, otherwise fall back to static products
+  const products =
+    backendProducts && backendProducts.length > 0
+      ? backendProducts
+      : STATIC_PRODUCTS;
 
   return (
     <main>
@@ -126,32 +132,19 @@ export default function HomePage() {
           </Link>
         </motion.div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex flex-col gap-3">
-                <Skeleton className="product-image-ratio w-full" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-5 w-36" />
-                <Skeleton className="h-4 w-16" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {(products ?? []).slice(0, 4).map((product, i) => (
-              <motion.div
-                key={product.id.toString()}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.5 }}
-              >
-                <ProductCard product={product} index={i + 1} />
-              </motion.div>
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {products.slice(0, 4).map((product, i) => (
+            <motion.div
+              key={product.id.toString()}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+            >
+              <ProductCard product={product} index={i + 1} />
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* ─── Social Impact Banner ─────────────────────────────────── */}
@@ -211,7 +204,9 @@ export default function HomePage() {
           >
             <div className="product-image-ratio bg-white rounded-sm overflow-hidden">
               <img
-                src="/assets/uploads/0b4a647c5c0d72c3c555e4c453eaecf1-1.jpg"
+                src={resolveProductImage(
+                  "/assets/uploads/0b4a647c5c0d72c3c555e4c453eaecf1-1.jpg",
+                )}
                 alt="Brand story"
                 className="w-full h-full object-contain"
                 loading="lazy"
@@ -219,7 +214,9 @@ export default function HomePage() {
             </div>
             <div className="product-image-ratio bg-white rounded-sm overflow-hidden mt-8">
               <img
-                src="/assets/uploads/77e7db1cfaa122f30cdd3542264cd8af-2.jpg"
+                src={resolveProductImage(
+                  "/assets/uploads/77e7db1cfaa122f30cdd3542264cd8af-2.jpg",
+                )}
                 alt="Brand story"
                 className="w-full h-full object-contain"
                 loading="lazy"

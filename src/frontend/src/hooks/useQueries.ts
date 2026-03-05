@@ -8,10 +8,16 @@ export function useGetAllProducts() {
     queryKey: ["products"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllProducts();
+      try {
+        return await actor.getAllProducts();
+      } catch {
+        return [];
+      }
     },
     enabled: !!actor && !isFetching,
     staleTime: 30_000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
   });
 }
 
@@ -64,5 +70,51 @@ export function usePlaceOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
+  });
+}
+
+export function useGetAllOrders() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Order[]>({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllOrders();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 0,
+  });
+}
+
+export function useUpdateOrderStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      status,
+    }: {
+      orderId: bigint;
+      status: string;
+    }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.updateOrderStatus(orderId, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useIsAdmin() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["isAdmin"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: Number.POSITIVE_INFINITY,
   });
 }

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Product } from "../backend.d";
 import { formatPrice } from "../utils/format";
+import { resolveProductImage } from "../utils/productImages";
 
 interface ProductCardProps {
   product: Product;
@@ -16,7 +17,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
       <Link to="/product/$id" params={{ id: product.id.toString() }}>
         <div className="product-image-ratio w-full overflow-hidden bg-secondary/50 relative">
           <img
-            src={product.imageUrl}
+            src={resolveProductImage(product.imageUrl)}
             alt={product.name}
             className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
             loading="lazy"

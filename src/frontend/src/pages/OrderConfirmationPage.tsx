@@ -7,7 +7,9 @@ import { useGetOrder } from "../hooks/useQueries";
 import { formatPrice } from "../utils/format";
 
 export default function OrderConfirmationPage() {
-  const { orderId } = useParams({ from: "/order-confirmation/$orderId" });
+  const { orderId } = useParams({
+    from: "/storefront/order-confirmation/$orderId",
+  });
   const orderIdBig = BigInt(orderId);
   const { data: order, isLoading } = useGetOrder(orderIdBig);
 
